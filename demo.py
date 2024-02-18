@@ -4,7 +4,8 @@ sys.path.append('model')
 import cv2
 import dlib
 from model.xception import xception
-from model.srffd import facesr
+from model.srffd import facesr, get_FaceSR_opt
+from model.facesr.models.SRGAN_model import SRGANModel
 import torch
 from torchvision import transforms as T
 import torch.nn.functional as F
@@ -15,6 +16,8 @@ import tempfile
 facedetector = None
 device = None
 model = None
+sr_model = SRGANModel(get_FaceSR_opt(), is_train=False)
+sr_model.load()
 label_map = ['fake', 'real']
 fake_color = (0,0,255)
 real_color = (0,255,0)
@@ -57,7 +60,7 @@ def ffd_image(img, sr=False):
         # 针对每个检测到的人脸区域进行模型推理
         face_img = img[y:y+h, x:x+w]
         if sr:
-            face_img = facesr(img)
+            face_img = facesr(img, sr_model)
         face_img = T.ToTensor()(face_img).unsqueeze(0).to(device)
         prediction = F.softmax(model(face_img), dim=1)
         label_idx = torch.argmax(prediction,1).item()
@@ -79,10 +82,11 @@ def ffd_video(path, fps):
     width = int(video_capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(video_capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     # 设置视频保存路径及编解码器
-    output_path = f'results/result.mp4'
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')  # 使用 H.264 编码器
+    output_path = f'results/result.avi'
+    # fourcc = cv2.VideoWriter_fourcc(*'avc1')  # 使用 H.264 编码器
 
     # 打开视频写入器
+    fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')
     out = cv2.VideoWriter(output_path, fourcc, 30.0, (width, height))
 
     # 设定处理的时间
@@ -92,7 +96,7 @@ def ffd_video(path, fps):
     # 获得视频总时长（秒）
     total_seconds = total_frames / video_capture.get(cv2.CAP_PROP_FPS)
     period = int(total_frames / (total_seconds * fps))
-    print(total_frames, total_seconds,fps, period)
+    # print(total_frames, total_seconds,fps, period)
     frame_count = 0  # 帧数计数器
     detect_num = 0
     while True:

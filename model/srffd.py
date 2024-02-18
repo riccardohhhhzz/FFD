@@ -1,7 +1,3 @@
-import sys
-sys.path.append('model/facesr')
-sys.path.append('model/facesr/models')
-from facesr.models.SRGAN_model import SRGANModel
 import argparse
 import torch
 import torchvision.transforms as transforms
@@ -65,10 +61,7 @@ def get_FaceSR_opt():
 
     return args
 
-sr_model = SRGANModel(get_FaceSR_opt(), is_train=False)
-sr_model.load()
-
-def facesr(img):
+def facesr(img, sr_model):
     input_img = torch.unsqueeze(_transform(Image.fromarray(img)), 0)
     sr_model.var_L = input_img.to(sr_model.device)
     sr_model.test()
