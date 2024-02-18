@@ -1,6 +1,7 @@
 import sys
 sys.path.append('model')
-
+sys.path.append('model/facesr')
+sys.path.append('model/facesr/models')
 import cv2
 import dlib
 from model.xception import xception
